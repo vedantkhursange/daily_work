@@ -2,8 +2,8 @@ name: Daily Commit Bot
 
 on:
   schedule:
-    - cron: '0 6 * * *'  # Runs at 6 AM UTC daily (11:30 AM IST)
-  workflow_dispatch:  # Allows manual trigger
+    - cron: '0 6 * * *'  # 6 AM UTC daily
+  workflow_dispatch:
 
 jobs:
   commit:
@@ -18,17 +18,24 @@ jobs:
         
       - name: Update activity log
         run: |
-          echo "Last activity: $(date)" >> activity.log
+          echo "📅 Activity on $(date '+%A, %B %d, %Y at %H:%M:%S %Z')" >> activity.log
+          echo "---" >> activity.log
           
       - name: Update README
         run: |
+          # Remove old timestamp line
+          sed -i '/Last updated:/d' README.md
           echo "" >> README.md
-          echo "Last updated: $(date)" >> README.md
+          echo "🕐 Last updated: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> README.md
           
       - name: Commit and push changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add .
-          git diff --quiet && git diff --staged --quiet || git commit -m "🤖 Auto update: $(date +'%Y-%m-%d %H:%M:%S')"
-          git push
+          if ! git diff --quiet && git diff --staged --quiet; then
+            git commit -m "🤖 Daily update: $(date +'%Y-%m-%d %H:%M:%S')"
+            git push
+          else
+            echo "No changes to commit"
+          fi
